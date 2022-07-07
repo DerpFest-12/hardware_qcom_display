@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2014 - 2020, The Linux Foundation. All rights reserved.
+* Copyright (c) 2014 - 2021, The Linux Foundation. All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted
 * provided that the following conditions are met:
@@ -60,7 +60,6 @@ class CompManager {
   DisplayError Prepare(Handle display_ctx, HWLayers *hw_layers);
   DisplayError Commit(Handle display_ctx, HWLayers *hw_layers);
   DisplayError PostPrepare(Handle display_ctx, HWLayers *hw_layers);
-  DisplayError ReConfigure(Handle display_ctx, HWLayers *hw_layers);
   DisplayError PostCommit(Handle display_ctx, HWLayers *hw_layers);
   void Purge(Handle display_ctx);
   DisplayError SetIdleTimeoutMs(Handle display_ctx, uint32_t active_ms, uint32_t inactive_ms);
@@ -110,7 +109,6 @@ class CompManager {
     uint32_t max_strategies = 0;
     uint32_t remaining_strategies = 0;
     bool idle_fallback = false;
-    bool thermal_fallback_ = false;
     // Using primary panel flag of hw panel to configure Constraints. We do not need other hw
     // panel parameters for now.
     bool is_primary_panel = false;

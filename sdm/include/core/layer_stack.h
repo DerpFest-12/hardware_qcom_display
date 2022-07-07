@@ -44,6 +44,10 @@
 #include "layer_buffer.h"
 #include "sdm_types.h"
 
+#ifdef UDFPS_ZPOS
+#include <display/drm/sde_drm.h>
+#endif
+
 namespace sdm {
 
 /*! @brief This enum represents display layer blending types.
@@ -180,6 +184,14 @@ struct LayerFlags {
       uint32_t sde_preferred : 1;  //! This flag shall be set by client to indicate that this layer
                                    //! will be composed by display device, layer with this flag
                                    //! will have highest priority. To be used by OEMs only.
+
+#ifdef UDFPS_ZPOS
+      uint32_t reserved : 23;      //!< This flag reserves the remaining 4 * 8 - (8 + 1) bits to
+                                   //!< avoid future ABI breakage
+
+      uint32_t fod_pressed : 1;    //!< This flag shall be set internally to mark the fod pressed
+                                   //!< layer
+#endif
     };
 
     uint32_t flags = 0;       //!< For initialization purpose only.
@@ -203,6 +215,11 @@ struct LayerRequestFlags {
       uint32_t src_tone_map: 1;    //!< This flag will be set by SDM when the layer needs
                                    //!< source tone map.
       uint32_t rc: 1;  //!< This flag will be set by SDM when the layer is drawn by RC HW.
+      uint32_t update_format: 1;   //!< This flag will be set by SDM when layer format is updated
+                                   //!< The buffer format is mentioned in the LayerRequest Format
+      uint32_t update_color_metadata: 1;   //!< This flag will be set by SDM when layer color
+                                           //!< metadata is updated. The color metadata is
+                                           //!< mentioned in the LayerRequest Format
     };
     uint32_t request_flags = 0;  //!< For initialization purpose only.
                                  //!< Shall not be refered directly.
@@ -218,9 +235,16 @@ struct LayerRequestFlags {
 */
 struct LayerRequest {
   LayerRequestFlags flags;  // Flags associated with this request
-  LayerBufferFormat format = kFormatRGBA8888;  // Requested format
-  uint32_t width = 0;  // Requested unaligned width.
+  LayerBufferFormat format = kFormatRGBA8888;  // Requested format - Used with tone_map and
+                                               // update_format flags
+  ColorMetaData color_metadata = { .colorPrimaries = ColorPrimaries_BT709_5,
+                                   .range = Range_Full,
+                                   .transfer = Transfer_sRGB };
+                                  // Requested color metadata
+  uint32_t width = 0;   // Requested unaligned width.
+                        // Used with tone_map flag
   uint32_t height = 0;  // Requested unalighed height
+                        // Used with tone_map flag
 };
 
 /*! @brief This structure defines flags associated with a layer stack. The 1-bit flag can be set to

@@ -44,7 +44,7 @@
 #include "hwc_buffer_sync_handler.h"
 
 using android::hardware::graphics::common::V1_2::ColorMode;
-using android::hardware::graphics::common::V1_1::Dataspace;
+using android::hardware::graphics::common::V1_2::Dataspace;
 using android::hardware::graphics::common::V1_1::RenderIntent;
 using android::hardware::graphics::common::V1_2::Hdr;
 namespace composer_V2_4 = ::android::hardware::graphics::composer::V2_4;
@@ -52,6 +52,7 @@ using HwcAttribute = composer_V2_4::IComposerClient::Attribute;
 using VsyncPeriodChangeConstraints = composer_V2_4::IComposerClient::VsyncPeriodChangeConstraints;
 using VsyncPeriodChangeTimeline = composer_V2_4::VsyncPeriodChangeTimeline;
 using VsyncPeriodNanos = composer_V2_4::VsyncPeriodNanos;
+using ClientTargetProperty = composer_V2_4::IComposerClient::ClientTargetProperty;
 
 namespace sdm {
 
@@ -208,6 +209,9 @@ class HWCDisplay : public DisplayEventHandler {
   virtual int GetCwbBufferResolution(CwbTapPoint cwb_tappoint, uint32_t *x_pixels,
                                      uint32_t *y_pixels);
   virtual DisplayError TeardownConcurrentWriteback(bool *needs_refresh);
+  virtual DisplayError TeardownCwbForVirtualDisplay(void) {
+    return kErrorNotSupported;
+  }
 
   // Captures frame output in the buffer specified by output_buffer_info. The API is
   // non-blocking and the client is expected to check operation status later on.
@@ -251,6 +255,11 @@ class HWCDisplay : public DisplayEventHandler {
   }
 
   virtual void SetCpuPerfHintLargeCompCycle() {};
+
+  virtual bool VsyncEnablePending() {
+    return false;
+  }
+
   // Display Configurations
   static uint32_t GetThrottlingRefreshRate() { return HWCDisplay::throttling_refresh_rate_; }
   static void SetThrottlingRefreshRate(uint32_t newRefreshRate)
@@ -308,6 +317,8 @@ class HWCDisplay : public DisplayEventHandler {
     return HWC2::Error::Unsupported;
   }
   virtual HWC2::Error SetClientTarget(buffer_handle_t target, shared_ptr<Fence> acquire_fence,
+                                      int32_t dataspace, hwc_region_t damage);
+  virtual HWC2::Error GetClientTarget(buffer_handle_t target, shared_ptr<Fence> acquire_fence,
                                       int32_t dataspace, hwc_region_t damage);
   virtual HWC2::Error SetColorMode(ColorMode mode) { return HWC2::Error::Unsupported; }
   virtual HWC2::Error SetColorModeWithRenderIntent(ColorMode mode, RenderIntent intent) {
@@ -444,6 +455,11 @@ class HWCDisplay : public DisplayEventHandler {
   virtual HWC2::Error NotifyDisplayCalibrationMode(bool in_calibration) {
     return HWC2::Error::Unsupported;
   };
+  virtual HWC2::Error GetClientTargetProperty(ClientTargetProperty *out_client_target_property);
+  virtual void GetConfigInfo(std::map<uint32_t, DisplayConfigVariableInfo> *variable_config_map,
+                             int *active_config_index, uint32_t *num_configs);
+  virtual void SetConfigInfo(std::map<uint32_t, DisplayConfigVariableInfo>& variable_config_map,
+                             int active_config_index, uint32_t num_configs) {};
 
  protected:
   static uint32_t throttling_refresh_rate_;
@@ -570,6 +586,10 @@ class HWCDisplay : public DisplayEventHandler {
   DisplayValidateState validate_state_ = kNormalValidate;
   DisplayCommitState commit_state_ = kNormalCommit;
   bool revalidate_pending_ = false;
+  buffer_handle_t client_target_handle_ = 0;
+  shared_ptr<Fence> client_acquire_fence_ = nullptr;
+  int32_t client_dataspace_ = 0;
+  hwc_region_t client_damage_region_ = {};
 
  private:
   void DumpInputBuffers(void);

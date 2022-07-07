@@ -65,7 +65,6 @@ class HWEventHandler {
   virtual DisplayError VSync(int64_t timestamp) = 0;
   virtual DisplayError Blank(bool blank) = 0;
   virtual void IdleTimeout() = 0;
-  virtual void ThermalEvent(int64_t thermal_level) = 0;
   virtual void CECMessage(char *message) = 0;
   virtual void IdlePowerCollapse() = 0;
   virtual void PingPongTimeout() = 0;
@@ -140,6 +139,7 @@ class HWInterface {
   virtual DisplayError EnableSelfRefresh() = 0;
   virtual PanelFeaturePropertyIntf *GetPanelFeaturePropertyIntf() = 0;
   virtual DisplayError GetFeatureSupportStatus(const HWFeature feature, uint32_t *status) = 0;
+  virtual DisplayError TeardownConcurrentWriteback(void) = 0;
 
  protected:
   virtual ~HWInterface() { }
